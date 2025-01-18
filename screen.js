@@ -31,7 +31,7 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
         console.log('Menunggu 10 detik...');
         await page.waitForTimeout(10000);  // Jeda 10 detik
 
-        // Langsung membuka URL tujuan tanpa klik menu "List"
+        // Langsung membuka URL tiket
         console.log('Membuka URL tiket...');
         await page.goto('https://intranet2023.biznetnetworks.com/2023/crm/ticket');  // Langsung mengakses URL tiket
         console.log('URL tiket dibuka.');
@@ -40,22 +40,27 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
         console.log('Menunggu 40 detik...');
         await page.waitForTimeout(60000);  // 40 detik menunggu loading
 
-        // Proses mengambil screenshot halaman tiket
-        //await ctx.reply('Proses: Mengambil screenshot halaman tiket...');
-        console.log('Mengambil screenshot halaman tiket...');
-        const screenshotDashboard = await page.screenshot();
-        await browser.close();
-        console.log('Screenshot tiket berhasil diambil.');
+        // Mengatur ukuran viewport
+        console.log('Mengatur ukuran viewport...');
+        await page.setViewportSize({ width: 2023, height: 1080 });  // Sesuaikan tinggi sesuai kebutuhan
 
-        // Proses mengirim hasil screenshot dashboard ke chat bot
-        //await ctx.reply('Proses: Mengirimkan screenshot tiket ke chat...');
+        // Menunggu elemen tabel muncul sebelum mengambil screenshot
+        const elementSelector = '.table-wrapper .table-container-h';  // Sesuaikan dengan elemen yang ingin diambil screenshot-nya
+        const element = await page.locator(elementSelector);
+        
+        // Ambil screenshot hanya dari elemen yang dipilih
+        console.log('Mengambil screenshot dari elemen...');
+        const screenshotDashboard = await element.screenshot();
+        await browser.close();
+        console.log('Screenshot berhasil diambil.');
+
+        // Proses mengirim hasil screenshot ke chat bot
         console.log('Mengirim screenshot tiket ke chat...');
         await ctx.replyWithPhoto({ source: screenshotDashboard });
-        console.log('Screenshot tiket berhasil dikirim ke chat.');
+        console.log('Screenshot berhasil dikirim ke chat.');
 
     } catch (error) {
         console.error('Terjadi kesalahan:', error);
-        // Screenshot terakhir sebelum proses dihentikan
         const finalScreenshot = await page.screenshot();
         await ctx.reply('Proses dihentikan karena kesalahan. Berikut adalah screenshot terakhir.');
         await ctx.replyWithPhoto({ source: finalScreenshot });
