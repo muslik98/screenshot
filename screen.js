@@ -7,8 +7,10 @@ const bot = new Telegraf('7664767328:AAHfOZCFh0p9NBlALHhmnHP5q6LKqOg0YIc');
 // Fungsi untuk login dan mengambil screenshot setelahnya
 async function captureScreenshot(url, loginUrl, username, password, ctx) {
     const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({ timeout: 120000 }); // Set timeout global
     const page = await browser.newPage();
-
+    page.setDefaultTimeout(120000); // 120 detik untuk semua tindakan pada halaman ini
+    
     try {
         // Proses membuka halaman login
         console.log('Mencoba mengakses halaman login...');
@@ -28,17 +30,19 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
         console.log('Tombol login diklik.');
 
         // Jeda 10 detik setelah mengklik tombol login
-        console.log('Menunggu 10 detik...');
-        await page.waitForTimeout(10000);  // Jeda 10 detik
+        console.log('Menunggu 2 detik...');
+        await page.waitForTimeout(2000);  // Jeda 10 detik
 
         // Langsung membuka URL tiket
         console.log('Membuka URL tiket...');
         await page.goto('https://intranet2023.biznetnetworks.com/2023/crm/ticket');  // Langsung mengakses URL tiket
         console.log('URL tiket dibuka.');
 
-        // Menunggu 40 detik untuk memastikan halaman dimuat sepenuhnya
-        console.log('Menunggu 40 detik...');
-        await page.waitForTimeout(60000);  // 40 detik menunggu loading
+        console.log('Prosessing');
+        await page.waitForFunction(() => {
+            const element = document.querySelector('#ticket-list-table_processing');
+            return element && element.style.display === 'none';
+        }, { timeout: 120000 }); // Maksimal waktu tunggu 120 detik
 
         // Mengatur ukuran viewport
         console.log('Mengatur ukuran viewport...');
