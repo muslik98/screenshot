@@ -1,8 +1,12 @@
-const { chromium } = require('playwright');
-const { Telegraf } = require('telegraf');
+import { chromium } from 'playwright';  // Ganti require dengan import
+import { Telegraf } from 'telegraf';
+import pLimit from 'p-limit';  // Ganti require dengan import
 
 // Ganti dengan token bot Telegram Anda
 const bot = new Telegraf('7664767328:AAHfOZCFh0p9NBlALHhmnHP5q6LKqOg0YIc');
+
+// Batasi hanya 5 permintaan simultan
+const limit = pLimit(5); // Mengatur limit hanya untuk 5 permintaan sekaligus
 
 // Fungsi untuk login dan mengambil screenshot setelahnya
 async function captureScreenshot(url, loginUrl, username, password, ctx) {
@@ -10,7 +14,7 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
     const context = await browser.newContext({ timeout: 120000 }); // Set timeout global
     const page = await browser.newPage();
     page.setDefaultTimeout(120000); // 120 detik untuk semua tindakan pada halaman ini
-    
+
     try {
         // Proses membuka halaman login
         console.log('Mencoba mengakses halaman login...');
@@ -29,29 +33,29 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
         await page.click('.btn.btn-block.btn-primary.btn-lg.font-weight-medium.auth-form-btn');
         console.log('Tombol login diklik.');
 
-        // Jeda 10 detik setelah mengklik tombol login
+        // Jeda 2 detik setelah mengklik tombol login
         console.log('Menunggu 2 detik...');
-        await page.waitForTimeout(2000);  // Jeda 10 detik
+        await page.waitForTimeout(2000);
 
         // Langsung membuka URL tiket
         console.log('Membuka URL tiket...');
-        await page.goto('https://intranet2023.biznetnetworks.com/2023/crm/ticket');  // Langsung mengakses URL tiket
+        await page.goto('https://intranet2023.biznetnetworks.com/2023/crm/ticket');
         console.log('URL tiket dibuka.');
 
-        console.log('Prosessing');
+        console.log('Processing...');
         await page.waitForFunction(() => {
             const element = document.querySelector('#ticket-list-table_processing');
             return element && element.style.display === 'none';
-        }, { timeout: 120000 }); // Maksimal waktu tunggu 120 detik
+        }, { timeout: 120000 });
 
         // Mengatur ukuran viewport
         console.log('Mengatur ukuran viewport...');
-        await page.setViewportSize({ width: 2023, height: 1080 });  // Sesuaikan tinggi sesuai kebutuhan
+        await page.setViewportSize({ width: 2023, height: 1080 });
 
         // Menunggu elemen tabel muncul sebelum mengambil screenshot
-        const elementSelector = '.table-wrapper .table-container-h';  // Sesuaikan dengan elemen yang ingin diambil screenshot-nya
+        const elementSelector = '.table-wrapper .table-container-h';
         const element = await page.locator(elementSelector);
-        
+
         // Ambil screenshot hanya dari elemen yang dipilih
         console.log('Mengambil screenshot dari elemen...');
         const screenshotDashboard = await element.screenshot();
@@ -89,8 +93,8 @@ bot.command('screenshot', async (ctx) => {
         const password = 'Biznet2024!'; // Password login Anda
 
         try {
-            // Ambil screenshot setelah login dan akses URL
-            await captureScreenshot('', loginUrl, username, password, msgCtx);
+            // Batasi permintaan dengan limit untuk 5 permintaan bersamaan
+            await limit(() => captureScreenshot('', loginUrl, username, password, msgCtx));
         } catch (error) {
             console.error('Terjadi kesalahan saat mengambil screenshot:', error);
             await msgCtx.reply('Terjadi kesalahan. Pastikan URL valid dan login berhasil.');
