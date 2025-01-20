@@ -2,13 +2,15 @@ const { chromium } = require('playwright');
 const { Telegraf } = require('telegraf');
 
 // Ganti dengan token bot Telegram Anda
-const bot = new Telegraf('7664767328:AAHfOZCFh0p9NBlALHhmnHP5q6LKqOg0YIc');
+const bot = new Telegraf('7832217088:AAEbMw8wUeA8Q7LCOYW7RC_aKxhJt2M97MA');
 
 // Fungsi untuk login dan mengambil screenshot setelahnya
 async function captureScreenshot(url, loginUrl, username, password, ctx) {
     const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({ timeout: 180000 }); // Set timeout global
     const page = await browser.newPage();
-
+    page.setDefaultTimeout(180000); // 180 detik untuk semua tindakan pada halaman ini
+    
     try {
         // Proses membuka halaman login
         console.log('Mencoba mengakses halaman login...');
@@ -27,35 +29,43 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
         await page.click('.btn.btn-block.btn-primary.btn-lg.font-weight-medium.auth-form-btn');
         console.log('Tombol login diklik.');
 
-        // Jeda 10 detik setelah mengklik tombol login
-        console.log('Menunggu 10 detik...');
-        await page.waitForTimeout(10000);  // Jeda 10 detik
+        console.log('Menunggu dashboard dimuat...');
+        await page.waitForSelector('.card.identity-card.b-rad-all-10', { timeout: 180000 });
+        console.log('Elemen berhasil dimuat.');
 
-        // Langsung membuka URL tujuan tanpa klik menu "List"
+
+        // Langsung membuka URL tiket
         console.log('Membuka URL tiket...');
         await page.goto('https://intranet2023.biznetnetworks.com/2023/crm/ticket');  // Langsung mengakses URL tiket
         console.log('URL tiket dibuka.');
 
-        // Menunggu 40 detik untuk memastikan halaman dimuat sepenuhnya
-        console.log('Menunggu 40 detik...');
-        await page.waitForTimeout(60000);  // 40 detik menunggu loading
+        console.log('Prosessing');
+        await page.waitForFunction(() => {
+            const element = document.querySelector('#ticket-list-table_processing');
+            return element && element.style.display === 'none';
+        }, { timeout: 180000 }); // Maksimal waktu tunggu 120 detik
 
-        // Proses mengambil screenshot halaman tiket
-        //await ctx.reply('Proses: Mengambil screenshot halaman tiket...');
-        console.log('Mengambil screenshot halaman tiket...');
-        const screenshotDashboard = await page.screenshot();
+        // Mengatur ukuran viewport
+        console.log('Mengatur ukuran viewport...');
+        await page.setViewportSize({ width: 2023, height: 1080 });  // Sesuaikan tinggi sesuai kebutuhan
+
+        // Menunggu elemen tabel muncul sebelum mengambil screenshot
+        const elementSelector = '.table-wrapper .table-container-h';  // Sesuaikan dengan elemen yang ingin diambil screenshot-nya
+        const element = await page.locator(elementSelector);
+        
+        // Ambil screenshot hanya dari elemen yang dipilih
+        console.log('Mengambil screenshot dari elemen...');
+        const screenshotDashboard = await element.screenshot();
         await browser.close();
-        console.log('Screenshot tiket berhasil diambil.');
+        console.log('Screenshot berhasil diambil.');
 
-        // Proses mengirim hasil screenshot dashboard ke chat bot
-        //await ctx.reply('Proses: Mengirimkan screenshot tiket ke chat...');
+        // Proses mengirim hasil screenshot ke chat bot
         console.log('Mengirim screenshot tiket ke chat...');
         await ctx.replyWithPhoto({ source: screenshotDashboard });
-        console.log('Screenshot tiket berhasil dikirim ke chat.');
+        console.log('Screenshot berhasil dikirim ke chat.');
 
     } catch (error) {
         console.error('Terjadi kesalahan:', error);
-        // Screenshot terakhir sebelum proses dihentikan
         const finalScreenshot = await page.screenshot();
         await ctx.reply('Proses dihentikan karena kesalahan. Berikut adalah screenshot terakhir.');
         await ctx.replyWithPhoto({ source: finalScreenshot });
