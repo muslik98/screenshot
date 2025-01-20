@@ -2,14 +2,14 @@ const { chromium } = require('playwright');
 const { Telegraf } = require('telegraf');
 
 // Ganti dengan token bot Telegram Anda
-const bot = new Telegraf('7832217088:AAEbMw8wUeA8Q7LCOYW7RC_aKxhJt2M97MA');
+const bot = new Telegraf('7664767328:AAHfOZCFh0p9NBlALHhmnHP5q6LKqOg0YIc');
 
 // Fungsi untuk login dan mengambil screenshot setelahnya
 async function captureScreenshot(url, loginUrl, username, password, ctx) {
     const browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext({ timeout: 180000 }); // Set timeout global
+    const context = await browser.newContext({ timeout: 120000 }); // Set timeout global
     const page = await browser.newPage();
-    page.setDefaultTimeout(180000); // 180 detik untuk semua tindakan pada halaman ini
+    page.setDefaultTimeout(120000); // 120 detik untuk semua tindakan pada halaman ini
     
     try {
         // Proses membuka halaman login
@@ -29,10 +29,9 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
         await page.click('.btn.btn-block.btn-primary.btn-lg.font-weight-medium.auth-form-btn');
         console.log('Tombol login diklik.');
 
-        console.log('Menunggu dashboard dimuat...');
-        await page.waitForSelector('.card.identity-card.b-rad-all-10', { timeout: 180000 });
-        console.log('Elemen berhasil dimuat.');
-
+        // Jeda 10 detik setelah mengklik tombol login
+        console.log('Menunggu 2 detik...');
+        await page.waitForTimeout(2000);  // Jeda 10 detik
 
         // Langsung membuka URL tiket
         console.log('Membuka URL tiket...');
@@ -43,7 +42,7 @@ async function captureScreenshot(url, loginUrl, username, password, ctx) {
         await page.waitForFunction(() => {
             const element = document.querySelector('#ticket-list-table_processing');
             return element && element.style.display === 'none';
-        }, { timeout: 180000 }); // Maksimal waktu tunggu 120 detik
+        }, { timeout: 120000 }); // Maksimal waktu tunggu 120 detik
 
         // Mengatur ukuran viewport
         console.log('Mengatur ukuran viewport...');
